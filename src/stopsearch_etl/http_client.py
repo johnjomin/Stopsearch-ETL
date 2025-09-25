@@ -54,3 +54,28 @@ class HttpPoliceApiClient(PoliceApiClient):
             raise ApiError(f"Request failed: {e}")
         except ValueError as e:
             raise ApiError(f"Invalid JSON response: {e}")
+
+    def get_available_months(self, force: str) -> List[str]:
+        """Get available months with stop & search data for a force."""
+        url = f"{self.base_url}/stops-force"
+        params = {"force": force}
+
+        try:
+            response = self.session.get(url, params=params, timeout=self.timeout)
+            response.raise_for_status()
+            availability_data = response.json()
+
+            # keep only months where this force shows up under stop-and-search
+            available_months = []
+            for month_data in availability_data:
+                if "stop-and-search" in month_data and force in month_data["stop-and-search"]:
+                    available_months.append(month_data["date"])
+
+            return available_months
+
+        except requests.exceptions.HTTPError as e:
+            raise ApiError(f"HTTP error {response.status_code}: {e}")
+        except requests.exceptions.RequestException as e:
+            raise ApiError(f"Request failed: {e}")
+        except ValueError as e:
+            raise ApiError(f"Invalid JSON response: {e}")

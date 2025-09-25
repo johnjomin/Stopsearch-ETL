@@ -23,3 +23,16 @@ class PoliceApiClient(ABC):
             List of stop & search record dictionaries from the API
         """
         pass
+
+    @abstractmethod
+    def get_available_months(self, force: str) -> list[str]:
+        """
+        Tell me which months have stop & search data for a given force
+
+        Args:
+            force: Police force uid (ie 'metropolitan')
+
+        Returns:
+            List of available months in YYYY-MM format
+        """
+        pass
