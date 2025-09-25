@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List
-from sqlalchemy import Column, Integer, String, DateTime, Float, Boolean, Text
+from sqlalchemy import Column, Integer, String, DateTime, Float, Boolean, Text, UniqueConstraint
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.sqlite import insert
@@ -32,10 +32,10 @@ class StopSearchTable(Base):
     street_id = Column(Integer)
     street_name = Column(String(500))
 
-    # Create composite index for common queries and uniqueness
+    # TODO: consider adding 'force' if/when you store it (same place/time across forces is possible)
     __table_args__ = (
-        # Composite unique constraint using datetime, latitude, longitude as natural key
-        # This prevents exact duplicates while allowing similar records at different times/places
+        UniqueConstraint('datetime', 'latitude', 'longitude', 'type', 'legislation',
+                        name='unique_stop_search'),
     )
 
 
@@ -116,10 +116,15 @@ class SqliteStopSearchRepository(StopSearchRepository):
             })
 
         stmt = insert(StopSearchTable).on_conflict_do_nothing()
-        result = self.session.execute(stmt, record_dicts)
-        self.session.commit()
 
-        return result.rowcount if result.rowcount is not None else 0
+        # Execute batch insert and track affected rows
+        # TODO: if performance matters, try driver rowcount or a changes() call (when supported)
+        initial_count = self.session.query(StopSearchTable).count()
+        self.session.execute(stmt, record_dicts)
+        self.session.commit()
+        final_count = self.session.query(StopSearchTable).count()
+
+        return final_count - initial_count
 
     def find_by_force_and_month(self, force: str, year_month: str) -> List[StopSearchRecord]:
         """Find all records for a specific force and month."""
