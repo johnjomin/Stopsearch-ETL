@@ -1,0 +1,35 @@
+version: '3.8'
+
+# Example override file for local development
+# Copy this to docker-compose.override.yml and customize as needed
+
+services:
+  etl:
+    environment:
+      - FORCES=metropolitan,west-midlands,merseyside
+      - DATABASE_URL=sqlite:////app/data/stopsearch_dev.db
+      - LOG_LEVEL=DEBUG
+    # Override command for development/testing
+    command: ["backfill", "--force", "metropolitan"]
+    # Mount source code for development (optional)
+    volumes:
+      - ./src:/app/src:ro
+      - etl_data:/app/data
+
+  # PostgreSQL service for production-like setup (optional)
+  # postgres:
+  #   image: postgres:15
+  #   container_name: stopsearch-postgres
+  #   environment:
+  #     - POSTGRES_DB=stopsearch
+  #     - POSTGRES_USER=etluser
+  #     - POSTGRES_PASSWORD=changeme
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
+  #   restart: unless-stopped
+
+# volumes:
+#   postgres_data:
+#     driver: local

@@ -1,0 +1,44 @@
+# simple compose to run the ETL app
+version: '3.8'
+
+services:
+  etl:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: stopsearch-etl
+    environment:
+      - FORCES=metropolitan,avon-and-somerset # list of forces to pull
+      - DATABASE_URL=sqlite:////app/data/stopsearch.db  # sqlite file lives in /app/data inside the container
+      - LOG_LEVEL=INFO
+      - PYTHONUNBUFFERED=1
+    volumes:
+    # keep data across restarts
+      - etl_data:/app/data
+    restart: unless-stopped
+    # default command shows help; override in real runs
+    # TODO: set a real default command for prod (e.g., "schedule" or "backfill")
+    command: ["--help"]
+    # TODO: consider adding resource limits (deploy/resources) if move to Swarm/K8s
+
+  # demo service that runs once and exits
+  etl-demo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: stopsearch-etl-demo
+    environment:
+      - FORCES=metropolitan
+      - DATABASE_URL=sqlite:////app/data/stopsearch.db
+      - LOG_LEVEL=INFO
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - etl_data:/app/data
+    command: ["run-once"]
+    profiles:
+      - demo
+    # TODO: keep this only for demos/dev; don’t ship in prod stacks
+
+volumes:
+  etl_data:
+    driver: local # simple local volume for persistence
