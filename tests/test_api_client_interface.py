@@ -15,6 +15,9 @@ def test_police_api_client_defines_fetch_stops_method():
         def fetch_stops(self, force: str, year_month: str) -> list[dict]:
             return []
 
+        def get_available_months(self, force: str) -> list[str]:
+            return []
+
     # Act
     client = TestClient()
 
